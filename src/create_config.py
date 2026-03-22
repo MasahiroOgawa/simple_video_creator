@@ -27,7 +27,7 @@ def build_config(data_dir: str, title: str, image_duration: int,
         "title": {
             "text": title,
             "duration": 3,
-            "font_family": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "font_family": "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
             "font_size": 72,
             "font_color": "white",
             "bg_color": "black",
