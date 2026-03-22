@@ -9,7 +9,7 @@ from moviepy import (
     concatenate_videoclips,
 )
 
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp", ".heic"}
 VIDEO_EXTS = {".mov", ".mp4", ".avi", ".mkv", ".webm"}
 
 

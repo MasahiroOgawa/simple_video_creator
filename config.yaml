@@ -3,20 +3,54 @@ output:
   width: 1920
   height: 1080
   fps: 30
-
 title:
-  text: "My Video"
+  text: Test
   duration: 3
-  font_family: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+  font_family: /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
   font_size: 72
-  font_color: "white"
-  bg_color: "black"
-
+  font_color: white
+  bg_color: black
 media:
-  - path: data/P_20171209_092321.jpg
-    duration: 5
-  - path: data/P_20171209_092343.jpg
-    duration: 4
-  - path: data/IMG_9596.MOV
-  - path: data/P_20171209_092401.jpg
-    duration: 5
+- path: data/wedding_profile_yuka/019F3274-A6CE-44CA-B44F-2B63574B966F.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/04A5D772-708B-496B-9F35-F1FF01A3246C.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/142F20BF-2377-41AC-B78A-B5776AB03CF7.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/22F4EC95-423B-4C09-A909-1559ECA977BE.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/3A4DF72D-1B2A-42DA-AECF-EB097C84F9B4.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/44D96C19-A273-4458-A34F-E3B9F297D629.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/51AF4683-37B5-4E0F-B349-771943C5CF23.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/5F0A80D9-F519-427B-9DF2-887FF5E58704.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/657FF8AA-2DF2-4127-8E4F-9061D14EAF28.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/72CB7789-D5D4-4751-8023-4F10F6F3BDF4.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/8440D099-CA4E-41FD-A3F0-846B005C0849.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/856C8B3D-F415-4E71-90B7-F8F3FA586EF7.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/996F10EA-05D2-4472-BDD4-143EE43AE15F.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/9A7C23BF-948D-4561-B96E-B9986FFA869F.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/9BF20317-5514-4CB3-BB1B-FC65D310B93C.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/A24522AE-95CF-405B-BDB1-BBAB9F28069E.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/BA5BABB9-14F4-4CA5-B7EB-7B42075C6061.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/BB501755-4548-4D00-8892-5B44D0F0C45E.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/F445A4A0-8012-46D0-B1DF-BE9B6F1537BF.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/F8BEAA78-AC06-49F2-A89D-BAB14831EDA8.jpeg
+  duration: 5
+- path: data/wedding_profile_yuka/IMG_9599.HEIC
+  duration: 5
+- path: data/wedding_profile_yuka/IMG_9599.MP4
