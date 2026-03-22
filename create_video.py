@@ -16,7 +16,7 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp", ".heic"}
 VIDEO_EXTS = {".mov", ".mp4", ".avi", ".mkv", ".webm"}
 
 
-def load_config(path: str = "config.yaml") -> dict:
+def load_config(path: str = "output/config.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
 

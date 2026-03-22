@@ -23,7 +23,7 @@ Options:
 - `--width` / `--height` — output resolution (default: `1920x1080`)
 - `--fps` — output FPS (default: `30`)
 - `--output` — output video path (default: `output/result.mp4`)
-- `--config` — config file to write (default: `config.yaml`)
+- `--config` — config file to write (default: `output/config.yaml`)
 
 ### 2. Create the video
 
@@ -31,7 +31,7 @@ Options:
 uv run python create_video.py
 ```
 
-Output is saved to the path specified in `config.yaml`.
+Output is saved to the path specified in `output/config.yaml`.
 
 ## Config format
 

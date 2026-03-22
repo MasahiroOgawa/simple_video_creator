@@ -40,17 +40,18 @@ def main():
     parser = argparse.ArgumentParser(description="Generate config.yaml from media files")
     parser.add_argument("--data-dir", default="data", help="Directory containing media files")
     parser.add_argument("--title", default="My Video", help="Title slide text")
-    parser.add_argument("--image-duration", type=int, default=5, help="Display seconds per image")
+    parser.add_argument("--image-duration", type=int, default=7, help="Display seconds per image")
     parser.add_argument("--width", type=int, default=1920, help="Output video width")
     parser.add_argument("--height", type=int, default=1080, help="Output video height")
     parser.add_argument("--fps", type=int, default=30, help="Output video FPS")
     parser.add_argument("--output", default="output/result.mp4", help="Output video path")
-    parser.add_argument("--config", default="config.yaml", help="Config file to write")
+    parser.add_argument("--config", default="output/config.yaml", help="Config file to write")
     args = parser.parse_args()
 
     cfg = build_config(args.data_dir, args.title, args.image_duration,
                        args.width, args.height, args.fps, args.output)
 
+    Path(args.config).parent.mkdir(parents=True, exist_ok=True)
     with open(args.config, "w") as f:
         yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
 
