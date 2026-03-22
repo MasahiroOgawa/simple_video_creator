@@ -1,6 +1,9 @@
 from pathlib import Path
 
+import numpy as np
+import pillow_heif
 import yaml
+from PIL import Image
 from moviepy import (
     CompositeVideoClip,
     ImageClip,
@@ -44,11 +47,19 @@ def make_title_clip(cfg: dict, w: int, h: int):
     return txt.with_duration(t.get("duration", 3))
 
 
+def load_image(path: str) -> np.ndarray:
+    if Path(path).suffix.lower() == ".heic":
+        heif_file = pillow_heif.open_heif(path)
+        img = Image.frombytes(heif_file.mode, heif_file.size, heif_file.data)
+        return np.array(img)
+    return np.array(Image.open(path).convert("RGB"))
+
+
 def make_media_clip(item: dict, w: int, h: int):
     p = Path(item["path"])
     ext = p.suffix.lower()
     if ext in IMAGE_EXTS:
-        clip = ImageClip(str(p)).with_duration(item["duration"])
+        clip = ImageClip(load_image(str(p))).with_duration(item["duration"])
     elif ext in VIDEO_EXTS:
         clip = VideoFileClip(str(p))
     else:
