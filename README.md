@@ -13,13 +13,13 @@ uv sync
 ### 1. Generate config from media files
 
 ```bash
-uv run python create_config.py --data-dir data/my_photos --title "My Video" --image-duration 5
+uv run python src/create_config.py --data-dir data/my_photos --title "My Video" --image-duration 7
 ```
 
 Options:
 - `--data-dir` — directory containing media files (default: `data`)
 - `--title` — title slide text (default: `My Video`)
-- `--image-duration` — seconds to display each image (default: `5`)
+- `--image-duration` — seconds to display each image (default: `7`)
 - `--width` / `--height` — output resolution (default: `1920x1080`)
 - `--fps` — output FPS (default: `30`)
 - `--output` — output video path (default: `output/result.mp4`)
@@ -28,7 +28,7 @@ Options:
 ### 2. Create the video
 
 ```bash
-uv run python create_video.py
+uv run python src/create_video.py
 ```
 
 Output is saved to the path specified in `output/config.yaml`.
