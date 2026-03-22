@@ -1,3 +1,23 @@
 output/
+data/
 .venv/
 __pycache__/
+
+# Images
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tiff
+*.webp
+*.heic
+*.HEIC
+
+# Videos
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.avi
+*.mkv
+*.webm
