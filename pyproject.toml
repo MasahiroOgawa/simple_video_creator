@@ -1,0 +1,10 @@
+[project]
+name = "simple-video-creator"
+version = "0.1.0"
+description = "Simple video creator from title slide and media files"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "moviepy>=2.2.1",
+    "pyyaml>=6.0.3",
+]
