@@ -40,7 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate config.yaml from media files")
     parser.add_argument("--data-dir", default="data", help="Directory containing media files")
     parser.add_argument("--title", default="My Video", help="Title slide text")
-    parser.add_argument("--image-duration", type=int, default=7, help="Display seconds per image")
+    parser.add_argument("--image-duration", type=int, default=6, help="Display seconds per image")
     parser.add_argument("--width", type=int, default=1920, help="Output video width")
     parser.add_argument("--height", type=int, default=1080, help="Output video height")
     parser.add_argument("--fps", type=int, default=30, help="Output video FPS")
