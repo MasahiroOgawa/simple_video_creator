@@ -26,7 +26,7 @@ def build_config(data_dir: str, title: str, image_duration: int,
         "output": {"path": output, "width": width, "height": height, "fps": fps},
         "title": {
             "text": title,
-            "duration": 3,
+            "duration": 6,
             "font_family": "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
             "font_size": 72,
             "font_color": "white",
