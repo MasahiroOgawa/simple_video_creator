@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import tempfile
 from pathlib import Path
@@ -68,7 +69,10 @@ def video_to_ts(video_path: str, w: int, h: int, fps: int, out: str):
 
 
 def main():
-    cfg = load_config()
+    parser = argparse.ArgumentParser(description="Create video from config")
+    parser.add_argument("--config", default="output/config.yaml", help="Path to config YAML")
+    args = parser.parse_args()
+    cfg = load_config(args.config)
     w, h = cfg["output"]["width"], cfg["output"]["height"]
     fps = cfg["output"].get("fps", 30)
     out_path = cfg["output"]["path"]
