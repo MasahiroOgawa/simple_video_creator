@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pillow_heif
 import yaml
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp", ".heic"}
 VIDEO_EXTS = {".mov", ".mp4", ".avi", ".mkv", ".webm"}
@@ -20,7 +20,9 @@ def load_image(path: str) -> Image.Image:
     if Path(path).suffix.lower() == ".heic":
         heif_file = pillow_heif.open_heif(path)
         return Image.frombytes(heif_file.mode, heif_file.size, heif_file.data)
-    return Image.open(path).convert("RGB")
+    img = Image.open(path)
+    img = ImageOps.exif_transpose(img)
+    return img.convert("RGB")
 
 
 def fit_image(img: Image.Image, w: int, h: int, bg=(0, 0, 0)) -> Image.Image:
@@ -132,9 +134,44 @@ def main():
             add_black_screen()
             print("  [black] closing")
 
-        # Concatenate
+        # Concatenate video segments (silent)
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-        ffmpeg(["-i", f"concat:{'|'.join(segments)}", "-c", "copy", out_path])
+        music_cfg = cfg.get("music")
+        if not music_cfg:
+            ffmpeg(["-i", f"concat:{'|'.join(segments)}", "-c", "copy", out_path])
+        else:
+            silent_path = f"{tmpdir}/silent.mp4"
+            ffmpeg(["-i", f"concat:{'|'.join(segments)}", "-c", "copy", silent_path])
+
+            # Calculate total video duration
+            total_dur = black_dur  # opening black
+            total_dur += cfg["title"].get("duration", 3)
+            for item in cfg["media"]:
+                total_dur += item.get("duration", 6)
+            total_dur += black_dur  # closing black
+
+            # Music start time and play duration
+            music_start = music_cfg.get("start", 0)
+            music_dur = total_dur - music_start
+
+            # Fade out over the last half of final media duration
+            last_dur = cfg["media"][-1].get("duration", 6) if cfg["media"] else 6
+            fade_dur = last_dur / 2
+            fade_start = music_dur - fade_dur - black_dur  # end fade before closing black
+
+            delay_ms = int(music_start * 1000)
+
+            print(f"  [music] adding {music_cfg['path']} (start={music_start}s, fade out at {fade_start:.1f}s, {fade_dur:.1f}s)")
+            ffmpeg([
+                "-i", silent_path,
+                "-i", music_cfg["path"],
+                "-filter_complex",
+                f"[1:a]atrim=0:{music_dur},afade=t=out:st={fade_start}:d={fade_dur},"
+                f"adelay={delay_ms}|{delay_ms}[a]",
+                "-map", "0:v", "-map", "[a]",
+                "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                "-shortest", out_path,
+            ])
 
     print(f"Created {out_path}")
 
