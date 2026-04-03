@@ -21,9 +21,11 @@ def scan_media(data_dir: str, image_duration: int) -> list[dict]:
 
 
 def build_config(data_dir: str, title: str, image_duration: int,
-                 width: int, height: int, fps: int, output: str) -> dict:
+                 width: int, height: int, fps: int, output: str,
+                 black_screen_duration: int = 3) -> dict:
     return {
-        "output": {"path": output, "width": width, "height": height, "fps": fps},
+        "output": {"path": output, "width": width, "height": height, "fps": fps,
+                   "black_screen_duration": black_screen_duration},
         "title": {
             "text": title,
             "duration": 6,
@@ -45,11 +47,13 @@ def main():
     parser.add_argument("--height", type=int, default=1080, help="Output video height")
     parser.add_argument("--fps", type=int, default=30, help="Output video FPS")
     parser.add_argument("--output", default="output/result.mp4", help="Output video path")
+    parser.add_argument("--black-screen-duration", type=int, default=3, help="Black screen seconds before/after video (0 to disable)")
     parser.add_argument("--config", default="output/config.yaml", help="Config file to write")
     args = parser.parse_args()
 
     cfg = build_config(args.data_dir, args.title, args.image_duration,
-                       args.width, args.height, args.fps, args.output)
+                       args.width, args.height, args.fps, args.output,
+                       args.black_screen_duration)
 
     Path(args.config).parent.mkdir(parents=True, exist_ok=True)
     with open(args.config, "w") as f:

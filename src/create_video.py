@@ -77,22 +77,42 @@ def main():
     fps = cfg["output"].get("fps", 30)
     out_path = cfg["output"]["path"]
 
+    black_dur = cfg["output"].get("black_screen_duration", 3)
+
     with tempfile.TemporaryDirectory() as tmpdir:
         segments = []
+        seg_idx = 0
+
+        # Black screen helper
+        def add_black_screen():
+            nonlocal seg_idx
+            black_png = f"{tmpdir}/black.png"
+            if not Path(black_png).exists():
+                Image.new("RGB", (w, h), (0, 0, 0)).save(black_png)
+            ts = f"{tmpdir}/seg_{seg_idx:03d}.ts"
+            image_to_ts(black_png, black_dur, fps, ts)
+            segments.append(ts)
+            seg_idx += 1
+
+        # Opening black screen
+        if black_dur > 0:
+            add_black_screen()
+            print("  [black] opening")
 
         # Title
         title_png = f"{tmpdir}/title.png"
         make_title_image(cfg, w, h).save(title_png)
-        title_ts = f"{tmpdir}/seg_000.ts"
+        title_ts = f"{tmpdir}/seg_{seg_idx:03d}.ts"
         image_to_ts(title_png, cfg["title"].get("duration", 3), fps, title_ts)
         segments.append(title_ts)
+        seg_idx += 1
         print(f"  [title] done")
 
         # Media
         for i, item in enumerate(cfg["media"], 1):
             p = Path(item["path"])
             ext = p.suffix.lower()
-            seg_ts = f"{tmpdir}/seg_{i:03d}.ts"
+            seg_ts = f"{tmpdir}/seg_{seg_idx:03d}.ts"
 
             if ext in IMAGE_EXTS:
                 img_png = f"{tmpdir}/img_{i:03d}.png"
@@ -104,7 +124,13 @@ def main():
                 raise ValueError(f"Unsupported: {ext}")
 
             segments.append(seg_ts)
+            seg_idx += 1
             print(f"  [{i}/{len(cfg['media'])}] {p.name}")
+
+        # Closing black screen
+        if black_dur > 0:
+            add_black_screen()
+            print("  [black] closing")
 
         # Concatenate
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)

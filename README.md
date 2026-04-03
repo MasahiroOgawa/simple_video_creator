@@ -28,10 +28,13 @@ Options:
 ### 2. Create the video
 
 ```bash
-uv run python src/create_video.py
+uv run python src/create_video.py --config output/config.yaml
 ```
 
-Output is saved to the path specified in `output/config.yaml`.
+Options:
+- `--config` — path to config YAML (default: `output/config.yaml`)
+
+Output is saved to the path specified in the config.
 
 ## Config format
 
