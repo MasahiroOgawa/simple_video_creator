@@ -44,6 +44,9 @@ output:
   width: 1920
   height: 1080
   fps: 30
+  black_screen_duration: 3    # seconds of black before/after video (default: 3)
+  transition: fade             # transition effect between segments (default: none)
+  transition_duration: 1       # transition length in seconds (default: 1)
 
 title:
   text: "My Video"
@@ -65,3 +68,23 @@ media:
 - Videos play their full length (no `duration` needed)
 - Supported images: jpg, jpeg, png, bmp, tiff, webp, heic
 - Supported videos: mov, mp4, avi, mkv, webm
+
+## Transitions
+
+Set `transition` in the `output` section to enable crossfade effects between segments. When omitted or set to `none`, segments are concatenated without re-encoding (fastest).
+
+Available transitions:
+
+| Category | Names |
+|----------|-------|
+| Fade | `fade`, `fadeblack`, `fadewhite`, `fadegrays` |
+| Wipe | `wipeleft`, `wiperight`, `wipeup`, `wipedown`, `wipetl`, `wipetr`, `wipebl`, `wipebr` |
+| Slide | `slideleft`, `slideright`, `slideup`, `slidedown` |
+| Smooth | `smoothleft`, `smoothright`, `smoothup`, `smoothdown` |
+| Circle/Rect | `circlecrop`, `rectcrop`, `circleclose`, `circleopen` |
+| Open/Close | `horzclose`, `horzopen`, `vertclose`, `vertopen` |
+| Diagonal | `diagbl`, `diagbr`, `diagtl`, `diagtr` |
+| Slice | `hlslice`, `hrslice`, `vuslice`, `vdslice` |
+| Cover/Reveal | `coverleft`, `coverright`, `coverup`, `coverdown`, `revealleft`, `revealright`, `revealup`, `revealdown` |
+| Other | `dissolve`, `pixelize`, `radial`, `hblur`, `distance`, `squeezeh`, `squeezev`, `zoomin` |
+| Wind | `hlwind`, `hrwind`, `vuwind`, `vdwind` |
