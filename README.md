@@ -88,3 +88,62 @@ Available transitions:
 | Cover/Reveal | `coverleft`, `coverright`, `coverup`, `coverdown`, `revealleft`, `revealright`, `revealup`, `revealdown` |
 | Other | `dissolve`, `pixelize`, `radial`, `hblur`, `distance`, `squeezeh`, `squeezev`, `zoomin` |
 | Wind | `hlwind`, `hrwind`, `vuwind`, `vdwind` |
+
+## DVD Burning
+
+### 1. Generate burn config
+
+Scan a directory for videos and songs to burn:
+
+```bash
+uv run python src/create_config.py -b --data-dir output --disc-label "WEDDING_DVD"
+```
+
+Options for `-b` mode:
+- `--data-dir` — directory to scan for videos and songs (default: `data`)
+- `--device` — DVD writer device (default: `/dev/sr0`)
+- `--dvd-format` — `ntsc` (720x480) or `pal` (720x576) (default: `ntsc`)
+- `--disc-label` — disc volume label (default: `MY_DVD`)
+- `--config` — config file to write (default: `output/config_burning.yaml`)
+
+### 2. Burn to DVD
+
+```bash
+uv run python src/burn_video.py --config output/config_burning.yaml
+```
+
+Options:
+- `--config` — path to burn config YAML (default: `output/config_burning.yaml`)
+- `--dry-run` — convert and author DVD structure without burning
+
+The script will:
+1. Convert videos to DVD-compatible MPEG-2 format
+2. Convert songs to DVD titles (black screen + audio)
+3. Author DVD-Video structure with `dvdauthor`
+4. Burn to disc with `growisofs`
+5. Generate a contents text file (`output/dvd_contents.txt`)
+6. Auto-play the DVD with VLC for verification
+
+### Burn config format
+
+```yaml
+dvd:
+  device: /dev/sr0
+  format: ntsc
+  disc_label: "WEDDING_DVD"
+  blank_disc: false       # set true to blank DVD-RW before burning
+
+videos:
+  - path: output/wedding_opening.mp4
+    title: "Wedding Opening"
+
+songs:
+  - path: data/music_opening/song.mp3
+    title: "Song Title"
+
+output:
+  dvd_dir: output/dvd_structure
+  contents_file: output/dvd_contents.txt
+```
+
+Requires: `ffmpeg`, `dvdauthor`, `growisofs`, `vlc`
