@@ -83,16 +83,38 @@ def convert_song_to_vob(src: str, dst: str, w: int, h: int, fps: float,
 
 
 def author_dvd(vob_files: list[str], dvd_dir: str, fmt: str):
-    """Create DVD-Video structure using dvdauthor."""
+    """Create DVD-Video structure using dvdauthor.
+
+    All VOBs go into a single titleset with one PGC per VOB.
+    Each PGC chains to the next via <post>jump next pgc;</post>
+    so the DVD player auto-advances through all titles.
+    """
     if Path(dvd_dir).exists():
         shutil.rmtree(dvd_dir)
     Path(dvd_dir).mkdir(parents=True)
 
-    titlesets = "\n".join(
-        f'  <titleset>\n    <titles>\n      <pgc>\n        <vob file="{vob}" />\n      </pgc>\n    </titles>\n  </titleset>'
-        for vob in vob_files
+    pgcs = []
+    for i, vob in enumerate(vob_files):
+        post = "jump next pgc;" if i < len(vob_files) - 1 else ""
+        pgcs.append(
+            f'      <pgc>\n'
+            f'        <vob file="{vob}" />\n'
+            f'        <post>{post}</post>\n'
+            f'      </pgc>'
+        )
+    pgcs_str = "\n".join(pgcs)
+    xml_content = (
+        f'<dvdauthor dest="{dvd_dir}">\n'
+        f'  <vmgm>\n'
+        f'    <fpc>jump title 1;</fpc>\n'
+        f'  </vmgm>\n'
+        f'  <titleset>\n'
+        f'    <titles>\n'
+        f'{pgcs_str}\n'
+        f'    </titles>\n'
+        f'  </titleset>\n'
+        f'</dvdauthor>'
     )
-    xml_content = f'<dvdauthor dest="{dvd_dir}">\n  <vmgm />\n{titlesets}\n</dvdauthor>'
 
     xml_path = Path(dvd_dir).parent / "dvdauthor.xml"
     xml_path.write_text(xml_content)
