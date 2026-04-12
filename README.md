@@ -131,7 +131,7 @@ dvd:
   device: /dev/sr0
   format: ntsc
   disc_label: "WEDDING_DVD"
-  blank_disc: false       # set true to blank DVD-RW before burning
+  blank_disc: false
 
 videos:
   - path: output/wedding_opening.mp4
@@ -145,5 +145,16 @@ output:
   dvd_dir: output/dvd_structure
   contents_file: output/dvd_contents.txt
 ```
+
+- `dvd.device` — DVD writer device path
+- `dvd.format` — `ntsc` (720x480, 29.97fps) or `pal` (720x576, 25fps)
+- `dvd.disc_label` — volume label written to the disc
+- `dvd.blank_disc` — set `true` to blank a DVD-RW before burning (ignored for DVD-R)
+- `videos[].path` — path to a video file to burn
+- `videos[].title` — display title for the contents file
+- `songs[].path` — path to an audio file to burn (rendered as black screen + audio)
+- `songs[].title` — display title for the contents file
+- `output.dvd_dir` — directory for the authored DVD-Video structure
+- `output.contents_file` — path to the generated contents text file
 
 Requires: `ffmpeg`, `dvdauthor`, `growisofs`, `vlc`
