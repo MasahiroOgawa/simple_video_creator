@@ -36,6 +36,15 @@ def ffprobe_duration(path: str) -> float:
     return float(result.stdout.strip())
 
 
+def has_audio_stream(path: str) -> bool:
+    result = subprocess.run(
+        ["ffprobe", "-v", "quiet", "-select_streams", "a",
+         "-show_entries", "stream=codec_type", "-of", "csv=p=0", path],
+        capture_output=True, text=True,
+    )
+    return bool(result.stdout.strip())
+
+
 def format_duration(seconds: float) -> str:
     m, s = divmod(int(seconds), 60)
     return f"{m}:{s:02d}"
@@ -61,13 +70,24 @@ def estimate_disc_size(videos: list[dict], songs: list[dict]) -> tuple[int, floa
 def convert_video_to_vob(src: str, dst: str, w: int, h: int, fps: float,
                          fmt: str):
     target = f"{fmt}-dvd"
-    ffmpeg(["-i", src,
-            "-target", target,
-            "-vf", f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
-                   f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black",
-            "-aspect", "16:9",
-            "-c:a", "ac3", "-b:a", "192k",
-            dst])
+    vf = (f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
+          f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black")
+    if has_audio_stream(src):
+        ffmpeg(["-i", src,
+                "-target", target,
+                "-vf", vf, "-aspect", "16:9",
+                "-c:a", "ac3", "-b:a", "192k",
+                dst])
+    else:
+        # Add silent audio so all VOBs have consistent streams in the titleset
+        ffmpeg(["-i", src,
+                "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+                "-target", target,
+                "-vf", vf, "-aspect", "16:9",
+                "-map", "0:v", "-map", "1:a",
+                "-c:a", "ac3", "-b:a", "192k",
+                "-shortest",
+                dst])
 
 
 def convert_song_to_vob(src: str, dst: str, w: int, h: int, fps: float,
