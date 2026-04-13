@@ -171,11 +171,12 @@ def create_menu_vob(titles: list[str], disc_label: str, w: int, h: int,
                (w - MENU_MARGIN_X, MENU_ITEMS_START_Y - 10)], fill="gray")
 
     # Button regions for highlight image (separated by 2px gaps)
+    # First button is "Play All", followed by individual chapter buttons
+    menu_items = [">> Play All"] + [f"{i + 1:2d}. {t}" for i, t in enumerate(titles)]
     buttons = []
-    for i, title in enumerate(titles):
+    for i, label in enumerate(menu_items):
         y = MENU_ITEMS_START_Y + i * MENU_LINE_HEIGHT
-        draw.text((MENU_MARGIN_X, y), f"{i + 1:2d}. {title}",
-                  fill="white", font=font)
+        draw.text((MENU_MARGIN_X, y), label, fill="white", font=font)
         buttons.append((
             MENU_MARGIN_X - 4,
             y,
@@ -239,7 +240,9 @@ def author_dvd(vob_files: list[str], menu_vob: str, dvd_dir: str, fmt: str):
     Path(dvd_dir).mkdir(parents=True)
 
     vobs = "\n".join(f'        <vob file="{vob}" chapters="0" />' for vob in vob_files)
-    button_cmds = "\n".join(
+    # First button: Play All (jump to chapter 1, plays through all)
+    # Remaining buttons: jump to individual chapters
+    button_cmds = "        <button>jump title 1 chapter 1;</button>\n" + "\n".join(
         f'        <button>jump title 1 chapter {i + 1};</button>'
         for i in range(len(vob_files))
     )
