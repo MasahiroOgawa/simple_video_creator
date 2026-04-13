@@ -22,6 +22,10 @@ def get_dvd_resolution(fmt: str) -> tuple[int, int, float]:
     return (720, 480, 29.97) if fmt == "ntsc" else (720, 576, 25.0)
 
 
+# DVD pixel aspect ratios for 16:9 display
+DVD_PAR = {"ntsc": 32 / 27, "pal": 64 / 45}
+
+
 def ffmpeg(args: list[str]):
     subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error"] + args,
                    check=True)
@@ -34,6 +38,16 @@ def ffprobe_duration(path: str) -> float:
         capture_output=True, text=True, check=True,
     )
     return float(result.stdout.strip())
+
+
+def get_video_dimensions(path: str) -> tuple[int, int]:
+    result = subprocess.run(
+        ["ffprobe", "-v", "quiet", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height", "-of", "csv=p=0", path],
+        capture_output=True, text=True, check=True,
+    )
+    w, h = result.stdout.strip().split(",")
+    return int(w), int(h)
 
 
 def has_audio_stream(path: str) -> bool:
@@ -67,11 +81,34 @@ def estimate_disc_size(videos: list[dict], songs: list[dict]) -> tuple[int, floa
     return total_bytes, total_seconds
 
 
+def _calc_encode_dimensions(src_w: int, src_h: int, dvd_w: int, dvd_h: int,
+                            par: float) -> tuple[int, int]:
+    """Calculate encoded dimensions that preserve source DAR on DVD.
+
+    DVD uses non-square pixels (anamorphic). A pixel displayed on screen
+    is par times wider than it is tall. We must account for this when
+    scaling so the content looks correct on playback.
+    """
+    src_dar = src_w / src_h
+    # encoded_w * par / encoded_h must equal src_dar
+    enc_ar = src_dar / par
+    if enc_ar >= dvd_w / dvd_h:
+        enc_w = dvd_w
+        enc_h = round(dvd_w / enc_ar)
+    else:
+        enc_h = dvd_h
+        enc_w = round(dvd_h * enc_ar)
+    # Ensure even dimensions (required by MPEG-2)
+    return enc_w - enc_w % 2, enc_h - enc_h % 2
+
+
 def convert_video_to_vob(src: str, dst: str, w: int, h: int, fps: float,
                          fmt: str):
     target = f"{fmt}-dvd"
-    vf = (f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
-          f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black")
+    par = DVD_PAR[fmt]
+    src_w, src_h = get_video_dimensions(src)
+    enc_w, enc_h = _calc_encode_dimensions(src_w, src_h, w, h, par)
+    vf = f"scale={enc_w}:{enc_h},pad={w}:{h}:({w}-{enc_w})/2:({h}-{enc_h})/2:black"
     if has_audio_stream(src):
         ffmpeg(["-i", src,
                 "-target", target,
@@ -97,6 +134,7 @@ def convert_song_to_vob(src: str, dst: str, w: int, h: int, fps: float,
             "-i", f"color=black:s={w}x{h}:r={fps}:d={duration}",
             "-i", src,
             "-target", target,
+            "-aspect", "16:9",
             "-c:a", "ac3", "-b:a", "192k",
             "-shortest",
             dst])
@@ -105,24 +143,15 @@ def convert_song_to_vob(src: str, dst: str, w: int, h: int, fps: float,
 def author_dvd(vob_files: list[str], dvd_dir: str, fmt: str):
     """Create DVD-Video structure using dvdauthor.
 
-    All VOBs go into a single titleset with one PGC per VOB.
-    Each PGC chains to the next via <post>jump next pgc;</post>
-    so the DVD player auto-advances through all titles.
+    All VOBs go into a single PGC so playback is continuous with no
+    navigation commands needed. Each VOB boundary becomes a chapter,
+    so viewers can skip between videos/songs with Next/Previous Chapter.
     """
     if Path(dvd_dir).exists():
         shutil.rmtree(dvd_dir)
     Path(dvd_dir).mkdir(parents=True)
 
-    pgcs = []
-    for i, vob in enumerate(vob_files):
-        post = "jump next pgc;" if i < len(vob_files) - 1 else ""
-        pgcs.append(
-            f'      <pgc>\n'
-            f'        <vob file="{vob}" />\n'
-            f'        <post>{post}</post>\n'
-            f'      </pgc>'
-        )
-    pgcs_str = "\n".join(pgcs)
+    vobs = "\n".join(f'        <vob file="{vob}" chapters="0" />' for vob in vob_files)
     xml_content = (
         f'<dvdauthor dest="{dvd_dir}">\n'
         f'  <vmgm>\n'
@@ -130,7 +159,9 @@ def author_dvd(vob_files: list[str], dvd_dir: str, fmt: str):
         f'  </vmgm>\n'
         f'  <titleset>\n'
         f'    <titles>\n'
-        f'{pgcs_str}\n'
+        f'      <pgc>\n'
+        f'{vobs}\n'
+        f'      </pgc>\n'
         f'    </titles>\n'
         f'  </titleset>\n'
         f'</dvdauthor>'
