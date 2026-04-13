@@ -7,6 +7,7 @@ from datetime import date
 from pathlib import Path
 
 import yaml
+from PIL import Image, ImageDraw, ImageFont
 
 DVD_MAX_BYTES = 4_700_000_000
 DVD_VIDEO_BITRATE = 6_000_000  # 6 Mbps (video + overhead)
@@ -140,27 +141,125 @@ def convert_song_to_vob(src: str, dst: str, w: int, h: int, fps: float,
             dst])
 
 
-def author_dvd(vob_files: list[str], dvd_dir: str, fmt: str):
-    """Create DVD-Video structure using dvdauthor.
+MENU_FONT_PATH = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+MENU_LINE_HEIGHT = 22
+MENU_MARGIN_X = 60
+MENU_ITEMS_START_Y = 80
 
-    All VOBs go into a single PGC so playback is continuous with no
-    navigation commands needed. Each VOB boundary becomes a chapter,
-    so viewers can skip between videos/songs with Next/Previous Chapter.
+
+def create_menu_vob(titles: list[str], disc_label: str, w: int, h: int,
+                    fps: float, fmt: str, tmpdir: str) -> str:
+    """Create a DVD menu VOB with selectable chapter buttons.
+
+    Uses spumux with autooutline to create clickable button regions
+    from a highlight image. Each chapter name becomes a button.
+    """
+    try:
+        font = ImageFont.truetype(MENU_FONT_PATH, 16)
+        title_font = ImageFont.truetype(MENU_FONT_PATH, 24)
+    except (OSError, IOError):
+        font = ImageFont.load_default()
+        title_font = font
+
+    # Background image with chapter list
+    bg = Image.new("RGB", (w, h), (0, 0, 0))
+    draw = ImageDraw.Draw(bg)
+    bbox = draw.textbbox((0, 0), disc_label, font=title_font)
+    draw.text(((w - bbox[2] + bbox[0]) // 2, 30), disc_label,
+              fill="white", font=title_font)
+    draw.line([(MENU_MARGIN_X, MENU_ITEMS_START_Y - 10),
+               (w - MENU_MARGIN_X, MENU_ITEMS_START_Y - 10)], fill="gray")
+
+    # Button regions for highlight image (separated by 2px gaps)
+    buttons = []
+    for i, title in enumerate(titles):
+        y = MENU_ITEMS_START_Y + i * MENU_LINE_HEIGHT
+        draw.text((MENU_MARGIN_X, y), f"{i + 1:2d}. {title}",
+                  fill="white", font=font)
+        buttons.append((
+            MENU_MARGIN_X - 4,
+            y,
+            w - MENU_MARGIN_X + 4,
+            y + MENU_LINE_HEIGHT - 2,  # 2px gap to next button
+        ))
+    bg.save(f"{tmpdir}/menu_bg.png")
+
+    # Highlight image: 4-color indexed PNG with button rectangles
+    # spumux autooutline detects each rectangle as a separate button
+    highlight = Image.new("P", (w, h), 0)
+    palette = [0] * 768
+    palette[0:3] = [0, 0, 0]
+    palette[3:6] = [255, 255, 255]
+    highlight.putpalette(palette)
+    hl_draw = ImageDraw.Draw(highlight)
+    for x0, y0, x1, y1 in buttons:
+        hl_draw.rectangle([(x0, y0), (x1, y1)], fill=1)
+    hl_path = f"{tmpdir}/menu_hl.png"
+    highlight.save(hl_path, transparency=0)
+
+    # spumux XML: autooutline detects buttons, autoorder="rows" orders top-to-bottom
+    spumux_xml = (
+        f'<subpictures>\n'
+        f'  <stream>\n'
+        f'    <spu start="00:00:00.00" end="00:00:10.00" force="yes"\n'
+        f'         highlight="{hl_path}" select="{hl_path}"\n'
+        f'         autooutline="infer" autoorder="rows"\n'
+        f'         outlinewidth="0" />\n'
+        f'  </stream>\n'
+        f'</subpictures>'
+    )
+    Path(f"{tmpdir}/spumux.xml").write_text(spumux_xml)
+
+    # Encode menu background as VOB (still image, 10 seconds)
+    menu_raw = f"{tmpdir}/menu_raw.vob"
+    ffmpeg(["-loop", "1", "-t", "10",
+            "-i", f"{tmpdir}/menu_bg.png",
+            "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+            "-target", f"{fmt}-dvd", "-aspect", "16:9",
+            "-shortest", menu_raw])
+
+    # Mux button subtitle stream
+    menu_vob = f"{tmpdir}/menu.vob"
+    with open(menu_raw, "rb") as fin, open(menu_vob, "wb") as fout:
+        subprocess.run(["spumux", f"{tmpdir}/spumux.xml"],
+                       stdin=fin, stdout=fout, check=True)
+    print("  Menu created")
+    return menu_vob
+
+
+def author_dvd(vob_files: list[str], menu_vob: str, dvd_dir: str, fmt: str):
+    """Create DVD-Video structure with chapter menu.
+
+    The menu shows numbered chapter names with selectable buttons.
+    Button positions come from the spumux subtitle stream (autooutline).
+    dvdauthor matches buttons positionally (1st button = 1st chapter, etc.).
     """
     if Path(dvd_dir).exists():
         shutil.rmtree(dvd_dir)
     Path(dvd_dir).mkdir(parents=True)
 
     vobs = "\n".join(f'        <vob file="{vob}" chapters="0" />' for vob in vob_files)
+    button_cmds = "\n".join(
+        f'        <button>jump title 1 chapter {i + 1};</button>'
+        for i in range(len(vob_files))
+    )
     xml_content = (
         f'<dvdauthor dest="{dvd_dir}">\n'
         f'  <vmgm>\n'
-        f'    <fpc>jump title 1;</fpc>\n'
+        f'    <fpc>jump titleset 1 menu;</fpc>\n'
         f'  </vmgm>\n'
         f'  <titleset>\n'
+        f'    <menus>\n'
+        f'      <pgc entry="root">\n'
+        f'        <vob file="{menu_vob}" />\n'
+        f'{button_cmds}\n'
+        f'        <post>jump cell 1;</post>\n'
+        f'      </pgc>\n'
+        f'    </menus>\n'
         f'    <titles>\n'
         f'      <pgc>\n'
         f'{vobs}\n'
+        f'        <post>call menu;</post>\n'
         f'      </pgc>\n'
         f'    </titles>\n'
         f'  </titleset>\n'
@@ -299,9 +398,15 @@ def main():
             convert_song_to_vob(s["path"], vob, w, h, fps, s["_duration"], fmt)
             vob_files.append(vob)
 
+        # Create chapter menu
+        print("Creating menu...")
+        titles = [v["title"] for v in videos] + [s["title"] for s in songs]
+        menu_vob = create_menu_vob(
+            titles, dvd["disc_label"], w, h, fps, fmt, tmpdir)
+
         # Author DVD structure
         print("Authoring DVD structure...")
-        author_dvd(vob_files, dvd_dir, fmt)
+        author_dvd(vob_files, menu_vob, dvd_dir, fmt)
 
     # Generate contents file
     generate_contents(cfg, contents_file)
